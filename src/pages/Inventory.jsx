@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import Layout from '../components/Layout';
 import { Plus, Search, Filter, Edit2, Trash2, X } from 'lucide-react';
 import axios from 'axios';
@@ -7,6 +8,7 @@ import { API_URL } from '../utils/config';
 
 const Inventory = () => {
     const { user } = useAuth();
+    const location = useLocation();
     const [parts, setParts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -209,7 +211,7 @@ const Inventory = () => {
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-medium text-slate-400 mb-1">Price ($)</label>
+                                        <label className="block text-sm font-medium text-slate-400 mb-1">Price (₹)</label>
                                         <input
                                             type="number"
                                             name="price"
@@ -300,15 +302,21 @@ const Inventory = () => {
                             ) : parts.length === 0 ? (
                                 <tr><td colSpan="8" className="px-6 py-8 text-center text-slate-500">No parts found. Add one to get started.</td></tr>
                             ) : (
-                                parts.map((part) => (
+                                parts.filter(part => {
+                                    const params = new URLSearchParams(location.search);
+                                    if (params.get('filter') === 'low_stock') {
+                                        return part.quantity <= (part.minStockLevel || 5);
+                                    }
+                                    return true;
+                                }).map((part) => (
                                     <tr key={part._id} className="hover:bg-slate-700/30 transition-colors">
                                         <td className="px-6 py-4 font-medium text-white">{part.name}</td>
                                         <td className="px-6 py-4 text-slate-400 font-mono text-xs">{part.sku}</td>
                                         <td className="px-6 py-4"><span className="px-2 py-1 rounded-md bg-slate-700/50 border border-slate-600/50 text-xs font-medium text-slate-300">{part.category}</span></td>
                                         <td className="px-6 py-4 text-slate-300 font-mono text-xs">{part.location || '-'}</td>
                                         <td className="px-6 py-4 font-medium text-slate-200">{part.quantity}</td>
-                                        <td className="px-6 py-4 text-emerald-400 font-medium">${part.price.toFixed(2)}</td>
-                                        <td className="px-6 py-4">
+                                        <td className="px-6 py-4 text-emerald-400 font-medium">₹{part.price.toFixed(2)}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap">
                                             {part.quantity <= part.minStockLevel ? (
                                                 <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-red-500/10 text-red-400 border border-red-500/10">Low Stock</span>
                                             ) : (

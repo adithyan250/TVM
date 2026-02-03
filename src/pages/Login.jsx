@@ -90,10 +90,6 @@ const Login = () => {
                             <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
                         </button>
                     </form>
-
-                    <div className="mt-8 text-center text-sm text-slate-500">
-                        Default: admin@tvmauto.com / admin123
-                    </div>
                 </div>
             </div>
         </div>

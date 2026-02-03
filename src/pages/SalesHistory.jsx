@@ -169,7 +169,7 @@ const SalesHistory = () => {
                                         <td className="px-6 py-4 text-slate-400 font-mono text-xs">#{sale._id.slice(-6).toUpperCase()}</td>
                                         <td className="px-6 py-4 font-medium text-white">{sale.customerName}</td>
                                         <td className="px-6 py-4 text-slate-300">{sale.items.length} items</td>
-                                        <td className="px-6 py-4 text-emerald-400 font-bold">${sale.grandTotal.toFixed(2)}</td>
+                                        <td className="px-6 py-4 text-emerald-400 font-bold">₹{sale.grandTotal.toFixed(2)}</td>
                                         <td className="px-6 py-4">
                                             <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/10">Completed</span>
                                         </td>
@@ -265,12 +265,12 @@ const SalesHistory = () => {
                                         <tr key={i} className="border-b border-gray-50">
                                             <td className="py-2 font-medium text-black">
                                                 {item.name}
-                                                {printFormat === 'thermal' && <div className="text-[10px] text-gray-400 font-mono">@{item.price}</div>}
+                                                {printFormat === 'thermal' && <div className="text-[10px] text-gray-400 font-mono">@ ₹{item.price}</div>}
                                                 {printFormat !== 'thermal' && <div className="text-xs text-gray-400 font-mono">{item.sku}</div>}
                                             </td>
                                             <td className="py-2 text-right">{item.quantity}</td>
-                                            {printFormat !== 'thermal' && <td className="py-2 text-right">${item.price.toFixed(2)}</td>}
-                                            <td className="py-2 text-right font-bold text-black">${item.total.toFixed(2)}</td>
+                                            {printFormat !== 'thermal' && <td className="py-2 text-right">₹{item.price.toFixed(2)}</td>}
+                                            <td className="py-2 text-right font-bold text-black">₹{item.total.toFixed(2)}</td>
                                         </tr>
                                     ))}
                                 </tbody>
@@ -280,15 +280,15 @@ const SalesHistory = () => {
                                 <div className={`${printFormat === 'thermal' ? 'w-full' : 'w-64'} space-y-2`}>
                                     <div className="flex justify-between text-sm text-gray-600">
                                         <span>Subtotal</span>
-                                        <span>${selectedSale.subtotal.toFixed(2)}</span>
+                                        <span>₹{selectedSale.subtotal.toFixed(2)}</span>
                                     </div>
                                     <div className="flex justify-between text-sm text-gray-600">
                                         <span>GST ({selectedSale.gstRate}%)</span>
-                                        <span>${selectedSale.gstAmount.toFixed(2)}</span>
+                                        <span>₹{selectedSale.gstAmount.toFixed(2)}</span>
                                     </div>
                                     <div className="flex justify-between border-t border-gray-200 pt-3 mt-3">
                                         <span className="font-bold text-lg text-black">Total</span>
-                                        <span className="font-bold text-lg text-black">${selectedSale.grandTotal.toFixed(2)}</span>
+                                        <span className="font-bold text-lg text-black">₹{selectedSale.grandTotal.toFixed(2)}</span>
                                     </div>
                                 </div>
                             </div>

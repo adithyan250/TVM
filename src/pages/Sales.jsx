@@ -253,7 +253,7 @@ const Sales = () => {
                                             </div>
                                         </div>
                                         <div className="flex items-center gap-4">
-                                            <span className="text-xl font-bold text-white">${part.price}</span>
+                                            <span className="text-xl font-bold text-white">₹{part.price}</span>
                                             <button
                                                 onClick={() => addToCart(part)}
                                                 className="p-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg shadow-lg shadow-indigo-500/20 transition-all hover:scale-105 active:scale-95"
@@ -323,8 +323,8 @@ const Sales = () => {
                                             </button>
                                         </div>
                                         <div className="text-right min-w-[80px]">
-                                            <div className="text-white font-medium">${item.total.toFixed(2)}</div>
-                                            <div className="text-xs text-slate-500">${item.price}/ea</div>
+                                            <div className="text-white font-medium">₹{item.total.toFixed(2)}</div>
+                                            <div className="text-xs text-slate-500">₹{item.price}/ea</div>
                                         </div>
                                         <button
                                             onClick={() => removeFromCart(item.part)}
@@ -343,15 +343,15 @@ const Sales = () => {
                         <div className="space-y-2 mb-6">
                             <div className="flex justify-between text-slate-400">
                                 <span>Subtotal</span>
-                                <span>${subtotal.toFixed(2)}</span>
+                                <span>₹{subtotal.toFixed(2)}</span>
                             </div>
                             <div className="flex justify-between text-slate-400">
                                 <span>GST ({gstRate}%)</span>
-                                <span>${gstAmount.toFixed(2)}</span>
+                                <span>₹{gstAmount.toFixed(2)}</span>
                             </div>
                             <div className="flex justify-between text-white text-xl font-bold pt-4 border-t border-slate-800">
                                 <span>Total</span>
-                                <span className="text-emerald-400">${grandTotal.toFixed(2)}</span>
+                                <span className="text-emerald-400">₹{grandTotal.toFixed(2)}</span>
                             </div>
                         </div>
 
@@ -447,12 +447,12 @@ const Sales = () => {
                                         <tr key={i} className="border-b border-gray-50">
                                             <td className="py-2 font-medium text-black">
                                                 {item.name}
-                                                {printFormat === 'thermal' && <div className="text-[10px] text-gray-400 font-mono">@{item.price}</div>}
+                                                {printFormat === 'thermal' && <div className="text-[10px] text-gray-400 font-mono">@ ₹{item.price}</div>}
                                                 {printFormat !== 'thermal' && <div className="text-xs text-gray-400 font-mono">{item.sku}</div>}
                                             </td>
                                             <td className="py-2 text-right">{item.quantity}</td>
-                                            {printFormat !== 'thermal' && <td className="py-2 text-right">${item.price.toFixed(2)}</td>}
-                                            <td className="py-2 text-right font-bold text-black">${item.total.toFixed(2)}</td>
+                                            {printFormat !== 'thermal' && <td className="py-2 text-right">₹{item.price.toFixed(2)}</td>}
+                                            <td className="py-2 text-right font-bold text-black">₹{item.total.toFixed(2)}</td>
                                         </tr>
                                     ))}
                                 </tbody>
@@ -462,15 +462,15 @@ const Sales = () => {
                                 <div className={`${printFormat === 'thermal' ? 'w-full' : 'w-64'} space-y-2`}>
                                     <div className="flex justify-between text-sm text-gray-600">
                                         <span>Subtotal</span>
-                                        <span>${lastSale.subtotal.toFixed(2)}</span>
+                                        <span>₹{lastSale.subtotal.toFixed(2)}</span>
                                     </div>
                                     <div className="flex justify-between text-sm text-gray-600">
                                         <span>GST ({lastSale.gstRate}%)</span>
-                                        <span>${lastSale.gstAmount.toFixed(2)}</span>
+                                        <span>₹{lastSale.gstAmount.toFixed(2)}</span>
                                     </div>
                                     <div className="flex justify-between border-t border-gray-200 pt-3 mt-3">
                                         <span className="font-bold text-lg text-black">Total</span>
-                                        <span className="font-bold text-lg text-black">${lastSale.grandTotal.toFixed(2)}</span>
+                                        <span className="font-bold text-lg text-black">₹{lastSale.grandTotal.toFixed(2)}</span>
                                     </div>
                                 </div>
                             </div>

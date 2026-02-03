@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 import { DollarSign, Package, AlertTriangle, TrendingUp, Activity, ShoppingCart } from 'lucide-react';
 import axios from 'axios';
@@ -9,15 +10,116 @@ import { API_URL } from '../utils/config';
 
 const Dashboard = () => {
     const { user } = useAuth();
+    const navigate = useNavigate();
     const [chartData, setChartData] = useState([]);
+    const [allSales, setAllSales] = useState([]);
+    const [timeRange, setTimeRange] = useState('week'); // 'week', 'month', 'year'
     const [stats, setStats] = useState([
-        { label: 'Total Revenue', value: '$0.00', change: '0%', icon: DollarSign, color: 'text-emerald-400', bg: 'bg-emerald-400/10' },
+        { label: 'Total Revenue', value: '₹0.00', change: '0%', icon: DollarSign, color: 'text-emerald-400', bg: 'bg-emerald-400/10' },
         { label: 'Total Stock', value: '0', change: 'Items', icon: Package, color: 'text-blue-400', bg: 'bg-blue-400/10' },
         { label: 'Low Stock Items', value: '0', change: 'Action Needed', icon: AlertTriangle, color: 'text-amber-400', bg: 'bg-amber-400/10' },
-        { label: 'Sales Today', value: '$0.00', change: 'Today', icon: TrendingUp, color: 'text-purple-400', bg: 'bg-purple-400/10' },
+        { label: 'Sales Today', value: '₹0.00', change: 'Today', icon: TrendingUp, color: 'text-purple-400', bg: 'bg-purple-400/10' },
     ]);
     const [recentSales, setRecentSales] = useState([]);
     const [loading, setLoading] = useState(true);
+
+    // Process chart data based on range
+    const processChartData = (salesData, range) => {
+        const now = new Date();
+        let dataPoints = [];
+
+        if (range === 'week') {
+            // Last 7 days
+            dataPoints = [...Array(7)].map((_, i) => {
+                const d = new Date(now);
+                d.setDate(d.getDate() - i);
+                return d.toISOString().split('T')[0]; // YYYY-MM-DD
+            }).reverse();
+
+            return dataPoints.map(date => {
+                const dayTotal = salesData
+                    .filter(sale => {
+                        try {
+                            return new Date(sale.createdAt).toISOString().startsWith(date);
+                        } catch (e) { return false; }
+                    })
+                    .reduce((acc, sale) => acc + sale.grandTotal, 0);
+                return {
+                    name: new Date(date).toLocaleDateString(undefined, { weekday: 'short' }),
+                    fullDate: date,
+                    sales: dayTotal
+                };
+            });
+        } else if (range === 'month') {
+            // Last 30 days
+            dataPoints = [...Array(30)].map((_, i) => {
+                const d = new Date(now);
+                d.setDate(d.getDate() - i);
+                return d.toISOString().split('T')[0];
+            }).reverse();
+
+            return dataPoints.map(date => {
+                const dayTotal = salesData
+                    .filter(sale => {
+                        try {
+                            return new Date(sale.createdAt).toISOString().startsWith(date);
+                        } catch (e) { return false; }
+                    })
+                    .reduce((acc, sale) => acc + sale.grandTotal, 0);
+                return {
+                    name: new Date(date).toLocaleDateString(undefined, { day: 'numeric', month: 'short' }),
+                    sales: dayTotal
+                };
+            });
+        } else if (range === 'year') {
+            // Last 12 months
+            dataPoints = [...Array(12)].map((_, i) => {
+                const d = new Date(now);
+                d.setMonth(d.getMonth() - i);
+                return d.toISOString().slice(0, 7); // YYYY-MM
+            }).reverse();
+
+            return dataPoints.map(monthStr => {
+                const monthTotal = salesData
+                    .filter(sale => {
+                        try {
+                            return new Date(sale.createdAt).toISOString().startsWith(monthStr);
+                        } catch (e) { return false; }
+                    })
+                    .reduce((acc, sale) => acc + sale.grandTotal, 0);
+
+                // Format YYYY-MM to "Jan"
+                const [y, m] = monthStr.split('-');
+                const dateObj = new Date(parseInt(y), parseInt(m) - 1, 1);
+
+                return {
+                    name: dateObj.toLocaleDateString(undefined, { month: 'short' }),
+                    year: y,
+                    sales: monthTotal
+                };
+            });
+        }
+    };
+
+    useEffect(() => {
+        if (allSales.length > 0) {
+            const data = processChartData(allSales, timeRange);
+            setChartData(data);
+
+            // Calculate total revenue from the chart data for the selected period
+            const periodRevenue = data.reduce((acc, item) => acc + item.sales, 0);
+
+            setStats(prevStats => {
+                const newStats = [...prevStats];
+                newStats[0] = {
+                    ...newStats[0],
+                    value: `₹${periodRevenue.toFixed(2)}`,
+                    change: timeRange === 'week' ? 'Last 7 Days' : timeRange === 'month' ? 'Last 30 Days' : 'Last Year'
+                };
+                return newStats;
+            });
+        }
+    }, [timeRange, allSales]);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -35,6 +137,7 @@ const Dashboard = () => {
 
                 const parts = partsRes.data;
                 const sales = salesRes.data;
+                setAllSales(sales);
 
                 // 1. Total Revenue
                 const totalRevenue = sales.reduce((acc, sale) => acc + sale.grandTotal, 0);
@@ -46,34 +149,24 @@ const Dashboard = () => {
                 const lowStockCount = parts.filter(part => part.quantity <= (part.minStockLevel || 5)).length;
 
                 // 4. Sales Today
-                const today = new Date().setHours(0, 0, 0, 0);
+                const todayStr = new Date().toISOString().split('T')[0];
                 const salesToday = sales
-                    .filter(sale => new Date(sale.createdAt).setHours(0, 0, 0, 0) === today)
+                    .filter(sale => {
+                        try {
+                            return new Date(sale.createdAt).toISOString().startsWith(todayStr);
+                        } catch (e) { return false; }
+                    })
                     .reduce((acc, sale) => acc + sale.grandTotal, 0);
 
-                // 5. Chart Data (Last 7 days)
-                const last7Days = [...Array(7)].map((_, i) => {
-                    const d = new Date();
-                    d.setDate(d.getDate() - i);
-                    return d.toISOString().split('T')[0];
-                }).reverse();
-
-                const chartData = last7Days.map(date => {
-                    const dayTotal = sales
-                        .filter(sale => sale.createdAt.startsWith(date))
-                        .reduce((acc, sale) => acc + sale.grandTotal, 0);
-                    return {
-                        name: new Date(date).toLocaleDateString(undefined, { weekday: 'short' }),
-                        sales: dayTotal
-                    };
-                });
-                setChartData(chartData);
+                // Initial Chart Data (uses default 'week')
+                // Effect [timeRange, allSales] will handle this, but to prevent flash of empty chart:
+                setChartData(processChartData(sales, 'week'));
 
                 setStats([
-                    { label: 'Total Revenue', value: `$${totalRevenue.toFixed(2)}`, change: 'Total', icon: DollarSign, color: 'text-emerald-400', bg: 'bg-emerald-400/10' },
+                    { label: 'Total Revenue', value: `₹${totalRevenue.toFixed(2)}`, change: 'Total', icon: DollarSign, color: 'text-emerald-400', bg: 'bg-emerald-400/10' },
                     { label: 'Total Stock', value: totalStock.toString(), change: 'Items in hand', icon: Package, color: 'text-blue-400', bg: 'bg-blue-400/10' },
                     { label: 'Low Stock Items', value: lowStockCount.toString(), change: lowStockCount > 0 ? 'Restock Needed' : 'Healthy', icon: AlertTriangle, color: 'text-amber-400', bg: 'bg-amber-400/10' },
-                    { label: 'Sales Today', value: `$${salesToday.toFixed(2)}`, change: new Date().toLocaleDateString(), icon: TrendingUp, color: 'text-purple-400', bg: 'bg-purple-400/10' },
+                    { label: 'Sales Today', value: `₹${salesToday.toFixed(2)}`, change: new Date().toLocaleDateString(), icon: TrendingUp, color: 'text-purple-400', bg: 'bg-purple-400/10' },
                 ]);
 
                 setRecentSales(sales.slice(0, 5));
@@ -92,7 +185,15 @@ const Dashboard = () => {
         <Layout title="Dashboard">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                 {stats.map((stat, index) => (
-                    <div key={index} className="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-xl hover:border-indigo-500/30 transition-colors cursor-pointer group">
+                    <div
+                        key={index}
+                        onClick={() => {
+                            if (stat.label === 'Low Stock Items') {
+                                navigate('/inventory?filter=low_stock');
+                            }
+                        }}
+                        className="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-xl hover:border-indigo-500/30 transition-colors cursor-pointer group"
+                    >
                         <div className="flex justify-between items-start mb-4">
                             <div className={`p-3 rounded-xl ${stat.bg} ${stat.color} group-hover:scale-110 transition-transform duration-300`}>
                                 <stat.icon size={22} />
@@ -109,8 +210,22 @@ const Dashboard = () => {
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div className="lg:col-span-2 bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-xl">
-                    <div className="flex justify-between items-center mb-6">
+                    <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
                         <h3 className="text-lg font-bold text-white">Sales Performance</h3>
+                        <div className="flex bg-slate-900 rounded-lg p-1">
+                            {['week', 'month', 'year'].map((range) => (
+                                <button
+                                    key={range}
+                                    onClick={() => setTimeRange(range)}
+                                    className={`px-3 py-1.5 text-xs font-medium rounded-md capitalize transition-all ${timeRange === range
+                                        ? 'bg-indigo-600 text-white shadow-lg'
+                                        : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                                        }`}
+                                >
+                                    {range}
+                                </button>
+                            ))}
+                        </div>
                     </div>
                     <div className="h-80 w-full">
                         <ResponsiveContainer width="100%" height="100%">
@@ -123,11 +238,11 @@ const Dashboard = () => {
                                 </defs>
                                 <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
                                 <XAxis dataKey="name" stroke="#94a3b8" tickLine={false} axisLine={false} />
-                                <YAxis stroke="#94a3b8" tickLine={false} axisLine={false} tickFormatter={(value) => `$${value}`} />
+                                <YAxis stroke="#94a3b8" tickLine={false} axisLine={false} tickFormatter={(value) => `₹${value}`} />
                                 <Tooltip
                                     contentStyle={{ backgroundColor: '#1e293b', borderColor: '#334155', borderRadius: '8px', color: '#fff' }}
                                     itemStyle={{ color: '#818cf8' }}
-                                    formatter={(value) => [`$${value}`, 'Sales']}
+                                    formatter={(value) => [`₹${value}`, 'Sales']}
                                 />
                                 <Area type="monotone" dataKey="sales" stroke="#818cf8" strokeWidth={3} fillOpacity={1} fill="url(#colorSales)" />
                             </AreaChart>
@@ -150,7 +265,7 @@ const Dashboard = () => {
                                     </div>
                                     <div>
                                         <p className="text-sm text-white font-medium">Sale to <span className="text-indigo-400">{sale.customerName}</span></p>
-                                        <p className="text-xs text-slate-400 mt-1">{sale.items.length} items • ${sale.grandTotal.toFixed(2)}</p>
+                                        <p className="text-xs text-slate-400 mt-1">{sale.items.length} items • ₹{sale.grandTotal.toFixed(2)}</p>
                                         <p className="text-xs text-slate-500 mt-1">{new Date(sale.createdAt).toLocaleString()}</p>
                                     </div>
                                 </div>
