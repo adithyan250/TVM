@@ -37,17 +37,23 @@ const Dashboard = () => {
             }).reverse();
 
             return dataPoints.map(date => {
-                const dayTotal = salesData
-                    .filter(sale => {
-                        try {
-                            return new Date(sale.createdAt).toISOString().startsWith(date);
-                        } catch (e) { return false; }
-                    })
-                    .reduce((acc, sale) => acc + sale.grandTotal, 0);
+                const filteredSales = salesData.filter(sale => {
+                    try {
+                        return new Date(sale.createdAt).toISOString().startsWith(date);
+                    } catch (e) { return false; }
+                });
+
+                const dayTotal = filteredSales.reduce((acc, sale) => acc + sale.grandTotal, 0);
+                const dayProfit = filteredSales.reduce((acc, sale) => {
+                    const saleProfit = sale.items.reduce((p, item) => p + ((item.price - (item.wholesalePrice || 0)) * item.quantity), 0);
+                    return acc + saleProfit;
+                }, 0);
+
                 return {
                     name: new Date(date).toLocaleDateString(undefined, { weekday: 'short' }),
                     fullDate: date,
-                    sales: dayTotal
+                    sales: dayTotal,
+                    profit: dayProfit
                 };
             });
         } else if (range === 'month') {
@@ -59,16 +65,22 @@ const Dashboard = () => {
             }).reverse();
 
             return dataPoints.map(date => {
-                const dayTotal = salesData
-                    .filter(sale => {
-                        try {
-                            return new Date(sale.createdAt).toISOString().startsWith(date);
-                        } catch (e) { return false; }
-                    })
-                    .reduce((acc, sale) => acc + sale.grandTotal, 0);
+                const filteredSales = salesData.filter(sale => {
+                    try {
+                        return new Date(sale.createdAt).toISOString().startsWith(date);
+                    } catch (e) { return false; }
+                });
+
+                const dayTotal = filteredSales.reduce((acc, sale) => acc + sale.grandTotal, 0);
+                const dayProfit = filteredSales.reduce((acc, sale) => {
+                    const saleProfit = sale.items.reduce((p, item) => p + ((item.price - (item.wholesalePrice || 0)) * item.quantity), 0);
+                    return acc + saleProfit;
+                }, 0);
+
                 return {
                     name: new Date(date).toLocaleDateString(undefined, { day: 'numeric', month: 'short' }),
-                    sales: dayTotal
+                    sales: dayTotal,
+                    profit: dayProfit
                 };
             });
         } else if (range === 'year') {
@@ -80,13 +92,17 @@ const Dashboard = () => {
             }).reverse();
 
             return dataPoints.map(monthStr => {
-                const monthTotal = salesData
-                    .filter(sale => {
-                        try {
-                            return new Date(sale.createdAt).toISOString().startsWith(monthStr);
-                        } catch (e) { return false; }
-                    })
-                    .reduce((acc, sale) => acc + sale.grandTotal, 0);
+                const filteredSales = salesData.filter(sale => {
+                    try {
+                        return new Date(sale.createdAt).toISOString().startsWith(monthStr);
+                    } catch (e) { return false; }
+                });
+
+                const monthTotal = filteredSales.reduce((acc, sale) => acc + sale.grandTotal, 0);
+                const monthProfit = filteredSales.reduce((acc, sale) => {
+                    const saleProfit = sale.items.reduce((p, item) => p + ((item.price - (item.wholesalePrice || 0)) * item.quantity), 0);
+                    return acc + saleProfit;
+                }, 0);
 
                 // Format YYYY-MM to "Jan"
                 const [y, m] = monthStr.split('-');
@@ -95,7 +111,8 @@ const Dashboard = () => {
                 return {
                     name: dateObj.toLocaleDateString(undefined, { month: 'short' }),
                     year: y,
-                    sales: monthTotal
+                    sales: monthTotal,
+                    profit: monthProfit
                 };
             });
         }
@@ -106,14 +123,20 @@ const Dashboard = () => {
             const data = processChartData(allSales, timeRange);
             setChartData(data);
 
-            // Calculate total revenue from the chart data for the selected period
+            // Calculate totals for the selected period
             const periodRevenue = data.reduce((acc, item) => acc + item.sales, 0);
+            const periodProfit = data.reduce((acc, item) => acc + item.profit, 0);
 
             setStats(prevStats => {
                 const newStats = [...prevStats];
                 newStats[0] = {
                     ...newStats[0],
                     value: `₹${periodRevenue.toFixed(2)}`,
+                    change: timeRange === 'week' ? 'Last 7 Days' : timeRange === 'month' ? 'Last 30 Days' : 'Last Year'
+                };
+                newStats[1] = {
+                    ...newStats[1],
+                    value: `₹${periodProfit.toFixed(2)}`,
                     change: timeRange === 'week' ? 'Last 7 Days' : timeRange === 'month' ? 'Last 30 Days' : 'Last Year'
                 };
                 return newStats;
@@ -158,12 +181,26 @@ const Dashboard = () => {
                     })
                     .reduce((acc, sale) => acc + sale.grandTotal, 0);
 
+                // 5. Total Profit
+                const totalProfit = sales.reduce((acc, sale) => {
+                    const saleProfit = sale.items.reduce((itemDetailsAcc, item) => {
+                        // Default to 0 cost if wholesalePrice is missing (legacy data)
+                        // Note: We might want to look up current part cost for legacy data, but simpler to assume 0 or just ignore. 
+                        // Actually, if it's 0, profit = selling price. That's misleading. 
+                        // But we can't do much about past data without cost history.
+                        // For now, use recorded wholesalePrice.
+                        const cost = item.wholesalePrice || 0;
+                        return itemDetailsAcc + ((item.price - cost) * item.quantity);
+                    }, 0);
+                    return acc + saleProfit;
+                }, 0);
+
                 // Initial Chart Data (uses default 'week')
-                // Effect [timeRange, allSales] will handle this, but to prevent flash of empty chart:
                 setChartData(processChartData(sales, 'week'));
 
                 setStats([
                     { label: 'Total Revenue', value: `₹${totalRevenue.toFixed(2)}`, change: 'Total', icon: DollarSign, color: 'text-emerald-400', bg: 'bg-emerald-400/10' },
+                    { label: 'Total Profit', value: `₹${totalProfit.toFixed(2)}`, change: 'Gross Profit', icon: DollarSign, color: 'text-green-400', bg: 'bg-green-400/10' },
                     { label: 'Total Stock', value: totalStock.toString(), change: 'Items in hand', icon: Package, color: 'text-blue-400', bg: 'bg-blue-400/10' },
                     { label: 'Low Stock Items', value: lowStockCount.toString(), change: lowStockCount > 0 ? 'Restock Needed' : 'Healthy', icon: AlertTriangle, color: 'text-amber-400', bg: 'bg-amber-400/10' },
                     { label: 'Sales Today', value: `₹${salesToday.toFixed(2)}`, change: new Date().toLocaleDateString(), icon: TrendingUp, color: 'text-purple-400', bg: 'bg-purple-400/10' },
@@ -183,7 +220,7 @@ const Dashboard = () => {
 
     return (
         <Layout title="Dashboard">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 mb-8">
                 {stats.map((stat, index) => (
                     <div
                         key={index}

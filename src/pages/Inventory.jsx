@@ -18,6 +18,7 @@ const Inventory = () => {
         category: '',
         quantity: 0,
         price: 0,
+        wholesalePrice: 0,
         minStockLevel: 5,
         location: ''
     });
@@ -63,6 +64,7 @@ const Inventory = () => {
             category: part.category,
             quantity: part.quantity,
             price: part.price,
+            wholesalePrice: part.wholesalePrice || 0,
             minStockLevel: part.minStockLevel,
             location: part.location || ''
         });
@@ -96,6 +98,7 @@ const Inventory = () => {
             category: prev.category,
             quantity: 0,
             price: 0,
+            wholesalePrice: 0,
             minStockLevel: 5,
             location: ''
         }));
@@ -126,6 +129,7 @@ const Inventory = () => {
                 category: prev.category,
                 quantity: 0,
                 price: 0,
+                wholesalePrice: 0,
                 minStockLevel: 5,
                 location: ''
             }));
@@ -211,11 +215,22 @@ const Inventory = () => {
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-medium text-slate-400 mb-1">Price (₹)</label>
+                                        <label className="block text-sm font-medium text-slate-400 mb-1">Selling Price (₹)</label>
                                         <input
                                             type="number"
                                             name="price"
                                             value={formData.price}
+                                            onChange={handleInputChange}
+                                            className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-white focus:outline-none focus:border-indigo-500"
+                                            required
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-400 mb-1">Wholesale Price (₹)</label>
+                                        <input
+                                            type="number"
+                                            name="wholesalePrice"
+                                            value={formData.wholesalePrice}
                                             onChange={handleInputChange}
                                             className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-white focus:outline-none focus:border-indigo-500"
                                             required
