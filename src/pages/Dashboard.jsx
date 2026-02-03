@@ -171,24 +171,23 @@ const Dashboard = () => {
                 // 3. Low Stock
                 const lowStockCount = parts.filter(part => part.quantity <= (part.minStockLevel || 5)).length;
 
-                // 4. Sales Today
+                // 4. Sales & Profit Today
                 const todayStr = new Date().toISOString().split('T')[0];
-                const salesToday = sales
-                    .filter(sale => {
-                        try {
-                            return new Date(sale.createdAt).toISOString().startsWith(todayStr);
-                        } catch (e) { return false; }
-                    })
-                    .reduce((acc, sale) => acc + sale.grandTotal, 0);
+                const todaySalesData = sales.filter(sale => {
+                    try {
+                        return new Date(sale.createdAt).toISOString().startsWith(todayStr);
+                    } catch (e) { return false; }
+                });
+
+                const salesToday = todaySalesData.reduce((acc, sale) => acc + sale.grandTotal, 0);
+                const profitToday = todaySalesData.reduce((acc, sale) => {
+                    const saleProfit = sale.items.reduce((p, item) => p + ((item.price - (item.wholesalePrice || 0)) * item.quantity), 0);
+                    return acc + saleProfit;
+                }, 0);
 
                 // 5. Total Profit
                 const totalProfit = sales.reduce((acc, sale) => {
                     const saleProfit = sale.items.reduce((itemDetailsAcc, item) => {
-                        // Default to 0 cost if wholesalePrice is missing (legacy data)
-                        // Note: We might want to look up current part cost for legacy data, but simpler to assume 0 or just ignore. 
-                        // Actually, if it's 0, profit = selling price. That's misleading. 
-                        // But we can't do much about past data without cost history.
-                        // For now, use recorded wholesalePrice.
                         const cost = item.wholesalePrice || 0;
                         return itemDetailsAcc + ((item.price - cost) * item.quantity);
                     }, 0);
@@ -203,7 +202,8 @@ const Dashboard = () => {
                     { label: 'Total Profit', value: `₹${totalProfit.toFixed(2)}`, change: 'Gross Profit', icon: DollarSign, color: 'text-green-400', bg: 'bg-green-400/10' },
                     { label: 'Total Stock', value: totalStock.toString(), change: 'Items in hand', icon: Package, color: 'text-blue-400', bg: 'bg-blue-400/10' },
                     { label: 'Low Stock Items', value: lowStockCount.toString(), change: lowStockCount > 0 ? 'Restock Needed' : 'Healthy', icon: AlertTriangle, color: 'text-amber-400', bg: 'bg-amber-400/10' },
-                    { label: 'Sales Today', value: `₹${salesToday.toFixed(2)}`, change: new Date().toLocaleDateString(), icon: TrendingUp, color: 'text-purple-400', bg: 'bg-purple-400/10' },
+                    { label: 'Sales Today', value: `₹${salesToday.toFixed(2)}`, change: 'Revenue', icon: TrendingUp, color: 'text-purple-400', bg: 'bg-purple-400/10' },
+                    { label: 'Profit Today', value: `₹${profitToday.toFixed(2)}`, change: 'Net', icon: Activity, color: 'text-pink-400', bg: 'bg-pink-400/10' },
                 ]);
 
                 setRecentSales(sales.slice(0, 5));
@@ -220,7 +220,7 @@ const Dashboard = () => {
 
     return (
         <Layout title="Dashboard">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
                 {stats.map((stat, index) => (
                     <div
                         key={index}
@@ -272,16 +272,21 @@ const Dashboard = () => {
                                         <stop offset="5%" stopColor="#818cf8" stopOpacity={0.3} />
                                         <stop offset="95%" stopColor="#818cf8" stopOpacity={0} />
                                     </linearGradient>
+                                    <linearGradient id="colorProfit" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="#34d399" stopOpacity={0.3} />
+                                        <stop offset="95%" stopColor="#34d399" stopOpacity={0} />
+                                    </linearGradient>
                                 </defs>
                                 <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
                                 <XAxis dataKey="name" stroke="#94a3b8" tickLine={false} axisLine={false} />
                                 <YAxis stroke="#94a3b8" tickLine={false} axisLine={false} tickFormatter={(value) => `₹${value}`} />
                                 <Tooltip
                                     contentStyle={{ backgroundColor: '#1e293b', borderColor: '#334155', borderRadius: '8px', color: '#fff' }}
-                                    itemStyle={{ color: '#818cf8' }}
-                                    formatter={(value) => [`₹${value}`, 'Sales']}
+                                    itemStyle={{ color: '#fff' }}
+                                    formatter={(value, name) => [`₹${value}`, name === 'sales' ? 'Revenue' : 'Profit']}
                                 />
                                 <Area type="monotone" dataKey="sales" stroke="#818cf8" strokeWidth={3} fillOpacity={1} fill="url(#colorSales)" />
+                                <Area type="monotone" dataKey="profit" stroke="#34d399" strokeWidth={3} fillOpacity={1} fill="url(#colorProfit)" />
                             </AreaChart>
                         </ResponsiveContainer>
                     </div>

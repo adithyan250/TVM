@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import Layout from '../components/Layout';
-import { Search, Calendar, Filter, FileText, ChevronRight, Printer, X } from 'lucide-react';
+import { Search, Calendar, Filter, FileText, ChevronRight, Printer, X, Trash2 } from 'lucide-react';
 import axios from 'axios';
 import useAuth from '../utils/useAuth';
 import { API_URL } from '../utils/config';
@@ -42,6 +42,26 @@ const SalesHistory = () => {
 
     const handlePrint = () => {
         window.print();
+    };
+
+    const handleDelete = async (id, e) => {
+        e.stopPropagation(); // Prevent opening the invoice modal when clicking delete
+        if (window.confirm('Are you sure you want to delete this sale record?')) {
+            try {
+                const config = {
+                    headers: {
+                        Authorization: `Bearer ${user.token}`,
+                    },
+                };
+                await axios.delete(`${API_URL}/sales/${id}`, config);
+                // Refresh sales list
+                const { data } = await axios.get(`${API_URL}/sales`, config);
+                setSales(data);
+            } catch (error) {
+                console.error("Error deleting sale:", error);
+                alert(error.response?.data?.message || 'Error deleting sale');
+            }
+        }
     };
 
     const filteredSales = sales.filter(sale => {
@@ -174,12 +194,21 @@ const SalesHistory = () => {
                                             <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/10">Completed</span>
                                         </td>
                                         <td className="px-6 py-4 text-right">
-                                            <button
-                                                onClick={() => handleViewInvoice(sale)}
-                                                className="flex items-center gap-1 text-indigo-400 hover:text-indigo-300 text-sm font-medium ml-auto cursor-pointer"
-                                            >
-                                                View <ChevronRight size={16} />
-                                            </button>
+                                            <div className="flex items-center justify-end gap-2">
+                                                <button
+                                                    onClick={() => handleViewInvoice(sale)}
+                                                    className="flex items-center gap-1 text-indigo-400 hover:text-indigo-300 text-sm font-medium cursor-pointer"
+                                                >
+                                                    View <ChevronRight size={16} />
+                                                </button>
+                                                <button
+                                                    onClick={(e) => handleDelete(sale._id, e)}
+                                                    className="p-1.5 text-slate-400 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-colors cursor-pointer"
+                                                    title="Delete Record"
+                                                >
+                                                    <Trash2 size={16} />
+                                                </button>
+                                            </div>
                                         </td>
                                     </tr>
                                 ))
