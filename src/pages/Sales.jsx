@@ -14,7 +14,6 @@ const Sales = () => {
     // Cart State
     const [cart, setCart] = useState([]);
     const [customerName, setCustomerName] = useState('');
-    const [gstRate, setGstRate] = useState(18);
 
     // Bill Modal State
     const [showBill, setShowBill] = useState(false);
@@ -106,9 +105,8 @@ const Sales = () => {
     // Calculations
     const calculateTotals = () => {
         const subtotal = cart.reduce((acc, item) => acc + item.total, 0);
-        const gstAmount = (subtotal * gstRate) / 100;
-        const grandTotal = subtotal + gstAmount;
-        return { subtotal, gstAmount, grandTotal };
+        const grandTotal = subtotal;
+        return { subtotal, grandTotal };
     };
 
     // Checkout
@@ -134,8 +132,7 @@ const Sales = () => {
                     part: item.part,
                     quantity: item.quantity
                 })),
-                customerName,
-                gstRate
+                customerName
             };
 
             const { data } = await axios.post(`${API_URL}/sales`, payload, config);
@@ -159,7 +156,7 @@ const Sales = () => {
         window.print();
     };
 
-    const { subtotal, gstAmount, grandTotal } = calculateTotals();
+    const { subtotal, grandTotal } = calculateTotals();
 
     return (
         <Layout title="New Sale">
@@ -214,7 +211,7 @@ const Sales = () => {
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-[calc(100vh-140px)]">
                 {/* LEFT: Product Search */}
-                <div className="flex flex-col gap-4">
+                <div className="flex flex-col gap-4 h-full">
                     <div className="relative">
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
                         <input
@@ -269,7 +266,7 @@ const Sales = () => {
                 </div>
 
                 {/* RIGHT: Cart / Checkout */}
-                <div className="flex flex-col bg-slate-800 rounded-xl border border-slate-700 shadow-xl overflow-hidden h-full">
+                <div className="flex flex-col bg-slate-800 rounded-xl border border-slate-700 shadow-xl overflow-hidden h-auto max-h-full self-start w-full">
                     {/* Header */}
                     <div className="p-6 border-b border-slate-700 bg-slate-900/50">
                         <div className="flex items-center justify-between mb-4">
@@ -344,10 +341,6 @@ const Sales = () => {
                             <div className="flex justify-between text-slate-400">
                                 <span>Subtotal</span>
                                 <span>₹{subtotal.toFixed(2)}</span>
-                            </div>
-                            <div className="flex justify-between text-slate-400">
-                                <span>GST ({gstRate}%)</span>
-                                <span>₹{gstAmount.toFixed(2)}</span>
                             </div>
                             <div className="flex justify-between text-white text-xl font-bold pt-4 border-t border-slate-800">
                                 <span>Total</span>
@@ -463,10 +456,6 @@ const Sales = () => {
                                     <div className="flex justify-between text-sm text-gray-600">
                                         <span>Subtotal</span>
                                         <span>₹{lastSale.subtotal.toFixed(2)}</span>
-                                    </div>
-                                    <div className="flex justify-between text-sm text-gray-600">
-                                        <span>GST ({lastSale.gstRate}%)</span>
-                                        <span>₹{lastSale.gstAmount.toFixed(2)}</span>
                                     </div>
                                     <div className="flex justify-between border-t border-gray-200 pt-3 mt-3">
                                         <span className="font-bold text-lg text-black">Total</span>

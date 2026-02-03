@@ -311,10 +311,6 @@ const SalesHistory = () => {
                                         <span>Subtotal</span>
                                         <span>₹{selectedSale.subtotal.toFixed(2)}</span>
                                     </div>
-                                    <div className="flex justify-between text-sm text-gray-600">
-                                        <span>GST ({selectedSale.gstRate}%)</span>
-                                        <span>₹{selectedSale.gstAmount.toFixed(2)}</span>
-                                    </div>
                                     <div className="flex justify-between border-t border-gray-200 pt-3 mt-3">
                                         <span className="font-bold text-lg text-black">Total</span>
                                         <span className="font-bold text-lg text-black">₹{selectedSale.grandTotal.toFixed(2)}</span>
