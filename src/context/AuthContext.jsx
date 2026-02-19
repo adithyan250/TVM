@@ -58,13 +58,35 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
+    const updateProfile = async (user) => {
+        try {
+            const config = {
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${user.token}`,
+                },
+            };
+            const { data } = await axios.put(`${API_URL}/auth/profile`, user, config);
+            setUser(data);
+            localStorage.setItem('userInfo', JSON.stringify(data));
+            return { success: true };
+        } catch (error) {
+            return {
+                success: false,
+                message: error.response && error.response.data.message
+                    ? error.response.data.message
+                    : error.message
+            };
+        }
+    };
+
     const logout = () => {
         localStorage.removeItem('userInfo');
         setUser(null);
     };
 
     return (
-        <AuthContext.Provider value={{ user, login, register, logout, loading }}>
+        <AuthContext.Provider value={{ user, login, register, logout, updateProfile, loading }}>
             {children}
         </AuthContext.Provider>
     );

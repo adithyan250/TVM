@@ -15,6 +15,7 @@ const Sidebar = () => {
         { path: '/inventory', icon: Package, label: 'Inventory' },
         { path: '/sales', icon: ShoppingCart, label: 'Sales' },
         { path: '/sales-history', icon: FileText, label: 'History' },
+        { path: '/account', icon: Settings, label: 'Account' },
     ];
 
     return (

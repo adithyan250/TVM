@@ -5,6 +5,7 @@ import Dashboard from './pages/Dashboard';
 import Inventory from './pages/Inventory';
 import Sales from './pages/Sales';
 import SalesHistory from './pages/SalesHistory';
+import Account from './pages/Account';
 import useAuth from './utils/useAuth';
 
 const PrivateRoute = ({ children }) => {
@@ -45,6 +46,11 @@ const AppRoutes = () => {
       <Route path="/sales-history" element={
         <PrivateRoute>
           <SalesHistory />
+        </PrivateRoute>
+      } />
+      <Route path="/account" element={
+        <PrivateRoute>
+          <Account />
         </PrivateRoute>
       } />
       <Route path="*" element={<Navigate to="/" />} />
